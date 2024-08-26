@@ -16,12 +16,12 @@ To train the model, use the following script:
 bash run_deit_Inet1k.sh
 ```
 
-This script will initiate the training process using the pre-configured optimal parameters and the [pretrained model](https://drive.google.com/file/d/1Y4DmcHhngex6h8B6bX-1Ehl6i6dJVgO7/view?usp=drive_link) for fine-tuning. The resulting trained model will be saved in the specified directory.
-We provide pre-trained model [DeiT III-Base](https://drive.google.com/file/d/1mpiZn1GP3K08L_RKjndI3WudceM53cUK/view?usp=sharing) and have set optimal default parameters for both training and testing. 
+This script will initiate the training process using the pre-configured optimal parameters and the official  [pretrained model](https://drive.google.com/file/d/1Y4DmcHhngex6h8B6bX-1Ehl6i6dJVgO7/view?usp=drive_link) for fine-tuning. The resulting trained model will be saved in the specified directory.
+
 
 ## Testing
 
-After training, you can evaluate the model using the following script:
+After training, you can evaluate the model using the following script. We provide fine-tuned model [DeiT III-Base](https://drive.google.com/file/d/1mpiZn1GP3K08L_RKjndI3WudceM53cUK/view?usp=sharing) and have set optimal default parameters for both training and testing. 
 
 ```bash
 bash run_eval_TTA.sh
