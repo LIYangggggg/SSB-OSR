@@ -4,6 +4,11 @@ import logging
 import csv
 import numpy as np
 
+def format_time(seconds):
+    hrs, rem = divmod(seconds, 3600)
+    mins, secs = divmod(rem, 60)
+    return int(hrs), int(mins), int(secs)
+
 class AverageMeter(object):
     def __init__(self):
         self.reset()

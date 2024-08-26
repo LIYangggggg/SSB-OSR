@@ -2,9 +2,9 @@ import model.classifier
 import timm
 from timm.models import create_model
 import torch
-from model.deit import *
 
-def get_model(nb_cls, logger, args):
+
+def get_model(nb_cls, args):
     
     net = timm.create_model('deit3_base_patch16_384', checkpoint_path=args.deit_path).cuda()
     
@@ -18,6 +18,5 @@ def get_model(nb_cls, logger, args):
         net.head = torch.nn.Linear(num_ftrs, nb_cls).cuda()
         if 'distilled' in args.deit_path :
             net.head_dist = torch.nn.Linear(num_ftrs, nb_cls).cuda()
-
 
     return net

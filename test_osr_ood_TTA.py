@@ -9,8 +9,6 @@ import numpy as np
 import torch.nn as nn
 
 from copy import deepcopy
-from PIL import Image
-from collections import Counter
 from tqdm import tqdm
 from torch.optim.swa_utils import AveragedModel
 from torch.utils.data import DataLoader
@@ -36,7 +34,7 @@ def test_predict(model, test_loader):
     save_labels = []
 
     # First extract all features
-    for images, labels, _, filenames in tqdm(test_loader):
+    for images, labels, _, _ in tqdm(test_loader):
         images = images.cuda()
 
         # Get logits
@@ -418,8 +416,6 @@ if __name__ == "__main__":
     net.load_state_dict(torch.load(os.path.join(model_path, f'best_acc_net.pth')), strict=True)
     net = net.cuda()
     
-    # net.module.head.threshold = args.act_threshold
-    # net.module.head.threshold = 100
     net.module.norm = nn.Identity() 
 
     imagenet_1k_root = r"/datassd/Inet1K/"

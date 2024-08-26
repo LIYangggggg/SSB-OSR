@@ -14,10 +14,6 @@ def get_args_parser():
     parser.add_argument('--weight-decay', default=5e-4, type=float, help='Weight decay')
     parser.add_argument('--momentum', default=0.9, type=float, help='Momentum')
 
-
-    ## nb of run + print freq
-    parser.add_argument('--nb-run', default=3, type=int, help='Run n times, in order to compute std')
-
     ## dataset setting
     parser.add_argument('--nb-worker', default=4, type=int, help='Nb of workers')
     parser.add_argument('--mixup-beta', default=10.0, type=float, help='beta used in the mixup data aug')
@@ -29,50 +25,21 @@ def get_args_parser():
     parser.add_argument('--resume', action='store_true', default=False, help='whether resume training')
 
     # the new network setting
-    parser.add_argument('--model', default='deit_base_patch16_LS', type=str, metavar='MODEL',
+    parser.add_argument('--model', default='deit3_base_patch16_384', type=str, metavar='MODEL',
                         help='Name of model to train')
     parser.add_argument('--drop', type=float, default=0.0, metavar='PCT',
                         help='Dropout rate (default: 0.)')
-    parser.add_argument('--drop-path', type=float, default=0.15, metavar='PCT',
-                        help='Drop path rate (default: 0.1)')
     parser.add_argument('--input-size', default=384, type=int, help='images input size')
     parser.add_argument('--distillation', default=False, action='store_true', help='whether use head distillation')
-    parser.add_argument('--finetune', default='', help='finetune for checkpoint')
+    parser.add_argument('--deit-path', default = '/data4022/shayouyang/deit_3_base_384_mod.pth', type=str, help='Official DeiT checkpoints')
     
     ## cosine classifier
     parser.add_argument('--use-cosine', action='store_true', default=False, help='whether use cosine classifier ')
     parser.add_argument('--cos-temp', type=int, default=8, help='temperature for scaling cosine similarity')
-
-    ''' the original getting model configs, is now muted
-    parser.add_argument('--train-size', default=224, type=int, help='train size')
-    
-    ## Energy parameters
-    parser.add_argument('--m-in', default=-25., type=float, help='margin for in-distribution; above this value will be penalized')
-    parser.add_argument('--energy-weight', default=0.1, type=float, help='energy_weight')
-    
-    ## Model + optim method + data aug + loss + post-hoc
-    parser.add_argument('--model-name', default='resnet18', type=str,choices = ['resnet18', 'resnet32', 'resnet50', 'densenet', 'wrn', 'vgg', 'vgg19bn', 'deit'],
-                        help='Models name to use')
-    parser.add_argument('--resume-path', type=str, help='resume path')
-    parser.add_argument('--deit-path', default = '/home/liyuting/ICLR/SURE-main/deit_base_patch16_224-b5f2ef4d.pth', type=str, help='Official DeiT checkpoints')
-
-    ## num register
-    parser.add_argument('--num-register', type=int, default=4, help='number of register')
-
-    ## fine-tuning
-    parser.add_argument('--fine-tune-epochs', default=20, type=int, help='Total number of fine-tuning ')
-    parser.add_argument('--fine-tune-lr', default=0.01, type=float,
-                        help='Max learning rate for cosine learning rate scheduler')
-    parser.add_argument('--reweighting-type', default=None, type=str, choices=['exp', 'threshold', 'power', 'linear'])
-    parser.add_argument('--alpha', default=0.5, type=float, help='When you set re-weighting type to [threshold], you can set the threshold by changing alpha')
-    parser.add_argument('--p', default=2, type=int, help='When you set re-weighting type to [power], you can set the power by changing p')
-    parser.add_argument('--t', default=1.0, type=float, help='When you set re-weighting type to [exp], you can set the temperature by changing t')
-    '''
-    
+ 
     parser.add_argument('--crl-weight', default=0.0, type=float, help='CRL loss weight')
     parser.add_argument('--mixup-weight', default=0.0, type=float, help='Mixup loss weight')
     parser.add_argument('--gpu', default=[2,3,4,5], type=int, nargs='+', help='GPU ids to use')
-
 
     ## SWA parameters
     parser.add_argument('--swa-lr', default=0.05, type=float, help='swa learning rate')

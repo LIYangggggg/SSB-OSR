@@ -12,16 +12,13 @@ def get_args_parser():
     # change this save path to read the correct checkpoint
     parser.add_argument('--save-pth', default='exp/output/net_best_acc.pth', type=str, help='path to model weight')
     ## cosine classifier
-    parser.add_argument('--use-cosine', action='store_true', default=False, help='whether use cosine classifier ')
+    parser.add_argument('--use-cosine', action='store_true', default=True, help='whether use cosine classifier ')
     parser.add_argument('--cos-temp', type=int, default=8, help='temperature for scaling cosine similarity')
     parser.add_argument('--num-register', type=int, default=4, help='number of register')
     
     # ten crop resize ratio
     parser.add_argument('--tencrop-ratio', type=float, default=0.875, help='ten crop resize ratio')
     
-    # energy & ReAct
-    # parser.add_argument('--T', type=float, default=1.0, help='energy temperature')
-    # parser.add_argument('--act-threshold', type=float, default=1.0, help='activate threshold')
     
     ## Model + optim method + data aug + loss + post-hoc
     ## mute this old model loading part
@@ -32,10 +29,7 @@ def get_args_parser():
                         help='Supported methods for optimization process')
     parser.add_argument('--deit-path', default='/data4022/shayouyang/deit_3_base_384_mod.pth', type=str,
                         help='Official DeiT checkpoints')
-    
-    parser.add_argument('--method', default='Energy', type=str, 
-                        choices=['MSP', 'Energy', 'ODIN', 'GradNorm', 'Energy_RW', 'MSP_RP', 'GradNorm_RP', 'ODIN_RW'],
-                        help='Supported methods for evaluate')
+
     
     # some new model setting from deit repo
     # the default is what used for training, do not modify them unless necessary

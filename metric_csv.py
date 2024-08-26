@@ -30,7 +30,7 @@ osr_preds_osr_samples_hard = data_csv[data_id_len*2 + data_ood_easy_len:, 2]
 osr_preds_osr_samples = np.concatenate((osr_preds_osr_samples_easy, osr_preds_osr_samples_hard), axis=0)
 
 # Get labels
-osr_labels = [1] * len(dataloader_id.dataset)*2 + [0] * data_ood_len                  # 1 if sample is ID else 0
+osr_labels = [1] * len(dataloader_id.dataset)*2 + [0] * data_ood_len               
 osr_labels = np.array(osr_labels)
 id_labels = np.array([x[1] for x in dataloader_id.dataset.samples])
 

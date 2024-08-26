@@ -1,28 +1,60 @@
-import pandas as pd
 import os
 import numpy as np
 from pprint import pprint
 import torch
 import sys
-# import funcs
+import torch.nn as nn
+
+from torch.autograd import Variable
 from collections import Counter
+from copy import deepcopy
+from tqdm import tqdm
 
 
-def get_target(label_filename, num_classes=1000):
-    cls_idx = []
-    with open(label_filename, 'r') as f:
-        for line in f.readlines():
-            segs = line.strip().split(' ')
-            cls_idx.append(int(segs[-1]))
-    cls_idx = np.array(cls_idx, dtype='int')
-    label_stat = Counter(cls_idx)
-    cls_num = [-1 for _ in range(num_classes)]
-    for i in range(num_classes):
-        cat_num = int(label_stat[i])
-        cls_num[i] = cat_num
+def get_target(dataset_root=r'/datassd/Inet1K/train', num_classes=1000):
+    cls_num = np.zeros(num_classes, dtype=int)
+    class_folders = [folder for folder in os.listdir(dataset_root) if os.path.isdir(os.path.join(dataset_root, folder))]
+    for class_index, folder in enumerate(class_folders):
+        class_path = os.path.join(dataset_root, folder)
+        num_images = len([img for img in os.listdir(class_path) if os.path.isfile(os.path.join(class_path, img))])
+        cls_num[class_index] = num_images
     target = cls_num / np.sum(cls_num)
     return target
+
+@torch.no_grad()
+def test_predict_GradNorm_RP(model, test_loader, targets, num_classes=1000):
+    """
+    Get class predictions and Grad Norm Score for all instances in loader
+    """
+
+    model.eval()
+    id_preds = []       # Store class preds
+    gradnorm_preds = []      # Stores OSR preds
+    targets = torch.tensor(targets).cuda()
+    targets = targets.unsqueeze(0)
+    feat_model = deepcopy(model)
+    feat_model.module.head = nn.Sequential()
+
+    # First extract all features
+    for b,(images, _, _, _) in enumerate(tqdm(test_loader)):
+        inputs = Variable(images.cuda(), requires_grad=False)
+        # Get logits
+        features = feat_model(inputs)
+        outputs = model.module.head.forward(features)
+        U = torch.norm(features, p=1, dim=1)
+        out_softmax = torch.nn.functional.softmax(outputs, dim=1)
+        V = torch.norm((targets - out_softmax), p=1, dim=1)
+        S = U * V / 768 / num_classes
+        
+        id_preds.extend(out_softmax.argmax(dim=-1).detach().cpu().numpy())
+        gradnorm_preds.extend(S.detach().cpu().numpy())
+        
+    id_preds = np.array(id_preds)
+    gradnorm_preds = np.array(gradnorm_preds)
     
+    return id_preds, gradnorm_preds
+
+
 def get_curve(known, novel, method=None):
     tp, fp = dict(), dict()
     fpr_at_tpr95 = dict()
@@ -75,58 +107,6 @@ def get_curve(known, novel, method=None):
         j -= 1
         
     fpr_at_tpr95 = np.sum(novel > threshold) / float(num_n)
-
-    return tp, fp, fpr_at_tpr95, threshold
-
-def get_energy_curve(known, novel, method=None):
-    tp, fp = dict(), dict()
-    fpr_at_tpr95 = dict()
-
-    known.sort(reversed=True)
-    novel.sort(reversed=True)
-
-    end = np.max([np.max(known), np.max(novel)])
-    start = np.min([np.min(known),np.min(novel)])
-
-    all = np.concatenate((known, novel))
-    all.sort()
-
-    num_k = known.shape[0]
-    num_n = novel.shape[0]
-
-    threshold = known[round(0.05 * num_k)]
-
-    tp = -np.ones([num_k+num_n+1], dtype=int)
-    fp = -np.ones([num_k+num_n+1], dtype=int)
-    tp[0], fp[0] = num_k, num_n
-    k, n = 0, 0
-    for l in range(num_k+num_n):
-        if k == num_k:
-            tp[l+1:] = tp[l]
-            fp[l+1:] = np.arange(fp[l]-1, -1, -1)
-            break
-        elif n == num_n:
-            tp[l+1:] = np.arange(tp[l]-1, -1, -1)
-            fp[l+1:] = fp[l]
-            break
-        else:
-            if novel[n] > known[k]:
-                n += 1
-                tp[l+1] = tp[l]
-                fp[l+1] = fp[l] - 1
-            else:
-                k += 1
-                tp[l+1] = tp[l] - 1
-                fp[l+1] = fp[l]
-
-    j = num_k+num_n-1
-    for l in range(num_k+num_n-1):
-        if all[j] == all[j-1]:
-            tp[j] = tp[j+1]
-            fp[j] = fp[j+1]
-        j -= 1
-        
-    fpr_at_tpr95 = np.sum(novel < threshold) / float(num_n)
 
     return tp, fp, fpr_at_tpr95, threshold
 
@@ -232,46 +212,16 @@ def compute_oscr(x1, x2, pred, labels):
 
     return OSCR
 
-def get_osr_ood_metric(model, dataloader_id, dataloader_ood, method='Energy'):
-    import funcs
-    print(f'==> The test indicator is {method} !')
+def get_osr_ood_metric(model, dataloader_id, dataloader_ood):
+
     # Get labels
-        
     osr_labels = [1] * len(dataloader_id.dataset) + [0] * len(dataloader_ood.dataset)                  # 1 if sample is ID else 0
     osr_labels = np.array(osr_labels)
     id_labels = np.array([x[1] for x in dataloader_id.dataset.samples])
 
-    # Get preds
-    if method == 'MSP':
-        id_preds, osr_preds_id_samples = funcs.test_predict_MSP(model, dataloader_id)
-        _, osr_preds_osr_samples = funcs.test_predict_MSP(model, dataloader_ood)
-    elif method == 'Energy':
-        id_preds, osr_preds_id_samples = funcs.test_predict_Energy(model, dataloader_id)
-        _, osr_preds_osr_samples = funcs.test_predict_Energy(model, dataloader_ood)
-    elif method == 'GradNorm':
-        id_preds, osr_preds_id_samples = funcs.test_predict_GradNorm(model, dataloader_id)
-        _, osr_preds_osr_samples = funcs.test_predict_GradNorm(model, dataloader_ood)  
-    elif method == 'ODIN':
-        id_preds, osr_preds_id_samples = funcs.test_predict_ODIN(model, dataloader_id)
-        _, osr_preds_osr_samples = funcs.test_predict_ODIN(model, dataloader_ood)  
-    elif method == 'Energy_RW':
-        target = get_target(r"./splits/val_labeled.txt")
-        id_preds, osr_preds_id_samples = funcs.test_predict_Energy_RW(model, dataloader_id, target)
-        _, osr_preds_osr_samples = funcs.test_predict_Energy_RW(model, dataloader_ood, target)
-    elif method == 'MSP_RP':
-        target = get_target(r"./splits/val_labeled.txt")
-        id_preds, osr_preds_id_samples = funcs.test_predict_MSP_RP(model, dataloader_id, target)
-        _, osr_preds_osr_samples = funcs.test_predict_MSP_RP(model, dataloader_ood, target)
-    elif method == 'GradNorm_RP':
-        target = get_target(r"./splits/val_labeled.txt")
-        id_preds, osr_preds_id_samples = funcs.test_predict_GradNorm_RP(model, dataloader_id, target)
-        _, osr_preds_osr_samples = funcs.test_predict_GradNorm_RP(model, dataloader_ood, target)
-    elif method == 'ODIN_RW':
-        target = get_target(r"./splits/val_labeled.txt")
-        id_preds, osr_preds_id_samples = funcs.test_predict_ODIN_RW(model, dataloader_id, target)
-        _, osr_preds_osr_samples = funcs.test_predict_ODIN_RW(model, dataloader_ood, target)               
-    else:
-        raise ValueError('Invalid method')
+    target = get_target()
+    id_preds, osr_preds_id_samples = test_predict_GradNorm_RP(model, dataloader_id, target)
+    _, osr_preds_osr_samples = test_predict_GradNorm_RP(model, dataloader_ood, target)
 
     # get metrics
     results = cal_ood_metrics(osr_preds_id_samples, osr_preds_osr_samples)         # Compute OoD metrics
@@ -300,33 +250,22 @@ def get_osr_ood_metric_from_result(id_labels, id_preds, osr_preds_id_samples, os
 
 if __name__ == "__main__":
     import sys
-    BASE_PATH = os.path.dirname(os.path.dirname(__file__))   # 文件路径一般会设置成常量
+    BASE_PATH = os.path.dirname(os.path.dirname(__file__))   #
     sys.path.append(BASE_PATH)
     import data.dataset_osr_test
-    import option
     import model.get_model
-    import timm
     import test_option
     from torch.optim.swa_utils import AveragedModel
     
-    # os.environ['CUDA_VISIBLE_DEVICES'] = '2'
-    
     args = test_option.get_args_parser()
-    # 加载数据
+
     imagenet_1k_root = r"/datassd/Inet1K/"
     imagenet_21k_root = r"/data/ImageNet-21K/"
     data_json_path = r"./splits/imagenet_ssb_splits.json"
-    # label_filename = r"./splits/val_labeled.txt"
     
     model_path = r'ImgNet1k_out/baseline10/imagenet_fmfp-mixup_0.2-crl_0.0'
-    act_threshold = 0.56828 # if use ReAct else 1000
-    # method = 'Energy_RW' # MSP、Energy、ODIN、GradNorm or Energy_RW、MSP_RP、GradNorm_RP、ODIN_RW
-    
-    if args.method == 'GradNorm':
-        batch_size = 1
-    else:
-        batch_size = 64
-    dataloader_id, dataloader_ood = data.dataset_osr_test.get_dataload([0],imagenet_1k_root, imagenet_21k_root, batch_size, data_json_path=data_json_path)
+
+    dataloader_id, dataloader_ood = data.dataset_osr_test.get_dataload([0],imagenet_1k_root, imagenet_21k_root, 64, data_json_path=data_json_path)
     print(len(dataloader_id.dataset))
     print(len(dataloader_ood.dataset))
     
@@ -336,10 +275,10 @@ if __name__ == "__main__":
         net = AveragedModel(net)
     net.load_state_dict(torch.load(os.path.join(model_path, f'best_acc_net.pth')), strict=True)
     net = net.cuda()
-    net.module.head.threshold = args.act_threshold
+
 
     # # 预测并得到结果
-    result = get_osr_ood_metric(net, dataloader_id, dataloader_ood, method=args.method)
+    result = get_osr_ood_metric(net, dataloader_id, dataloader_ood)
 
     msg = f"==> The test indicator is {args.method}, using ReAct, threshold is {args.act_threshold:.4f}!\n"
     msg += "AUROC:{:.2f};  FPR:{:.2f};  OSCR:{:.2f};  ACC:{:.2f};  AUIN:{:.2f};  AUOUT:{:.2f};  DTERR:{:.2f};".format( \

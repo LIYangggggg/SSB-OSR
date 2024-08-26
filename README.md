@@ -1,6 +1,3 @@
-以下是更新后的README内容，其中包含超链接指向预训练模型的下载地址，并指定模型为DeiTIII-Base：
-
-```markdown
 # SSB-OSR
 
 ## Environment Setup
@@ -19,7 +16,7 @@ To train the model, use the following script:
 bash run_deit_Inet1k.sh
 ```
 
-This script will initiate the training process using the pre-configured optimal parameters. The resulting trained model will be saved in the specified directory.
+This script will initiate the training process using the pre-configured optimal parameters and the [pretrained model](https://drive.google.com/file/d/1Y4DmcHhngex6h8B6bX-1Ehl6i6dJVgO7/view?usp=drive_link) for fine-tuning. The resulting trained model will be saved in the specified directory.
 
 ## Testing
 
@@ -36,7 +33,7 @@ This will generate multiple prediction results, which will be saved in the `save
 To fuse the prediction results and export them to a CSV file, use the following script:
 
 ```bash
-python metric_result_GradNorm.py
+python metric_result_GradNorm.py --result_dir path/to/
 ```
 
 This script will process the saved prediction results and produce a final CSV file containing the fused results. After generating the CSV file, you can further test the results by using the following script:
@@ -62,5 +59,5 @@ The table below shows the competition results, with **Intellindust-AI-Lab (ours)
 | xuanxuan                | 79.94 | 65.86     | 
 | WJB                     | 79.84 | 66.05     | 
 | aesdfdgfgff             | 79.77 | **61.44**     |
-```
+
 

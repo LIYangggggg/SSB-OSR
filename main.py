@@ -5,7 +5,6 @@ import json
 import data.dataset_osr_test
 import train
 import utils.test_osr_ood
-import valid
 from torch.optim.swa_utils import AveragedModel
 import model.get_model
 import optim
@@ -72,43 +71,8 @@ def main(proc_idx, args):
     valid_loader_id, valid_loader_ood = data.dataset_osr_test.get_dataload(args.gpu, args.id_dir, args.ood_dir, args.batch_size)
         
     ## define model, optimizer 
-    '''
-    net = model.get_model.get_model(nb_cls, logger, args)
-    '''
-    net = model.get_model.get_deit_model(args)
-
-    if args.finetune:
-        checkpoint = torch.load(args.finetune, map_location='cpu')
-
-        checkpoint_model = checkpoint['model']
-        state_dict = net.state_dict()
-        for k in ['head.weight', 'head.bias', 'head_dist.weight', 'head_dist.bias']:
-            if k in checkpoint_model and checkpoint_model[k].shape != state_dict[k].shape:
-                print(f"Removing key {k} from pretrained checkpoint")
-                del checkpoint_model[k]
-
-        pos_embed_checkpoint = checkpoint_model['pos_embed']
-        embedding_size = pos_embed_checkpoint.shape[-1]
-        num_patches = net.patch_embed.num_patches
-        num_extra_tokens = net.pos_embed.shape[-2] - num_patches
-        orig_size = int((pos_embed_checkpoint.shape[-2] - num_extra_tokens) ** 0.5)
-        new_size = int(num_patches ** 0.5)
-        extra_tokens = pos_embed_checkpoint[:, :num_extra_tokens]
-        pos_tokens = pos_embed_checkpoint[:, num_extra_tokens:]
-        pos_tokens = pos_tokens.reshape(-1, orig_size, orig_size, embedding_size).permute(0, 3, 1, 2)
-        pos_tokens = torch.nn.functional.interpolate(
-            pos_tokens, size=(new_size, new_size), mode='bicubic', align_corners=False)
-        pos_tokens = pos_tokens.permute(0, 2, 3, 1).flatten(1, 2)
-        new_pos_embed = torch.cat((extra_tokens, pos_tokens), dim=1)
-        checkpoint_model['pos_embed'] = new_pos_embed
-
-        net.load_state_dict(checkpoint_model, strict=False)
-        
-        if args.use_cosine:
-            net.switch_csc_head(args.cos_temp)
-        if args.distillation:
-            net.set_distillation()
-
+    net = model.get_model.get_model(nb_cls, args)
+    
     if rank == 0:
         print(net)
     if args.resume:
@@ -155,9 +119,10 @@ def main(proc_idx, args):
             net_val = swa_model.cuda()
         else : 
             net_val = net
-        # evaluate by energy score
-        res = utils.test_osr_ood.get_osr_ood_metric(net_val, valid_loader_id, valid_loader_ood) # change here for an osr competition validation
+            
+        # evaluate 
         if rank == 0:    
+            res = utils.test_osr_ood.get_osr_ood_metric(net_val, valid_loader_id, valid_loader_ood) # change here for an osr competition validation
             log = [key + ': {:.3f}'.format(res[key]) for key in res]
             msg = '################## \n ---> Validation Epoch {:d}\t'.format(epoch) + '\t'.join(log)
             logger.info(msg)

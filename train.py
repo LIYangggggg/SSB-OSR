@@ -5,7 +5,7 @@ import numpy as np
 import torch.nn.functional as F
 
 import time
-from utils.display_results import format_time
+from utils.utils import format_time
 
 class Mixup_Criterion(nn.Module):
     def __init__(self, beta, cls_criterion):

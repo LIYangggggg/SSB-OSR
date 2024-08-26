@@ -1,8 +1,6 @@
 import pandas as pd
 import numpy as np
 import os
-import data.dataset_osr_test
-import torch
 from tqdm import tqdm
 from utils.test_osr_ood import get_osr_ood_metric_from_result
 
@@ -372,58 +370,35 @@ def metric_min_GradNorm_and_ave_acc(result_dirs):
 
 
 if __name__ == "__main__":
-    pass
-    result_dir = r"exp/2_baseline_res384ep30_inputsize384_ReAct1.5/10c"
+    import argparse
+    parser = argparse.ArgumentParser(description="List subdirectories in the specified result directory.")
+
+    parser.add_argument(
+        '--result_dir', 
+        type=str, 
+        default=r"exp/2_baseline_res384ep30_inputsize384_ReAct1.5/10c", 
+        help="Path to the result directory"
+    )
+    
+    args = parser.parse_args()
+    result_dir = args.result_dir
     sub_dirs = sorted(os.listdir(result_dir))
     print(sub_dirs)
 
-    # 10次分开运算
-    # for sdir in sub_dirs:
-    #     sub_dir_path = os.path.join(result_dir, sdir)
-    #     print(f"sdir: {sdir}")
-    #     print(f"sub_dir_path: {sub_dir_path}")
-    #     metric_single_result_GradNorm(sub_dir_path)
-    
     sub_dir_list = []
-    # for sdir in sub_dirs:        
-    #     sub_dir_list.append(os.path.join(result_dir, sdir))
 
     for i, sdir in enumerate(sub_dirs):
         if i < 5:
             sub_dir_list.append(os.path.join(result_dir, sdir))
        
-
-    # result_dir = r"/data/Private/wushengliang/project_program/SSB_OSR_clone/res384ep30_fivecrop_flip_colorjitter/5cj"
-    # sub_dirs = sorted(os.listdir(result_dir))
-    # for sdir in sub_dirs:
-    #     sub_dir_list.append(os.path.join(result_dir, sdir))
-    # print(f"max ligit GradNorm")
-    # metric_max_GradNorm_and_ave_acc(sub_dir_list)
-    # print(f"min ligit GradNorm")
-    # metric_min_GradNorm_and_ave_acc(sub_dir_list)
-    
-    # print(f"ave ligit GradNorm")
     id_preds_cls, id_preds_score, ood_preds_score = metric_ave_result_GradNorm(sub_dir_list)
-
-    # print(f"middle GradNorm")
-    # for i in range(20):
-    #     print(f"sub std {i} ")
-    #     metric_ave_sub_std_result_GradNorm(sub_dir_list, -i*0.05)
 
     id_image_name_path = os.path.join(result_dir, sub_dirs[0], "id_image_name.txt")
     ood_image_name_path = os.path.join(result_dir, sub_dirs[0], "ood_image_name.txt")
     csv_save_path = os.path.join(result_dir, sub_dirs[0], "result.csv")
     export_csv(id_image_name_path, ood_image_name_path, id_preds_cls, id_preds_score, ood_preds_score, csv_save_path)
 
-    # print(f"multi ligit GradNorm")
-    # metric_simi_result_GradNorm(sub_dir_list)
-    # print(f"multi ligit GradNorm, idx map")
-    # metric_simi_result_GradNorm_idx_src(sub_dir_list, 4)
-    # 两次的flip
-    # print(f"geometric mean")
-    # metric_multi_result_GradNorm(sub_dir_list)
-    # print(f"temperature sharpen")
-    # metric_temperature_sharpen_result_GradNorm(sub_dir_list, 1.5)
+
 
 
 
