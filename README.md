@@ -27,11 +27,9 @@ After training, you can evaluate the model using the following script. We provid
 bash run_eval_TTA.sh
 ```
 
-This will generate multiple prediction results, which will be saved in the `save_dir` directory.
+This will generate multiple prediction results.
 
-## Result Fusion and CSV Testing
-
-To fuse the prediction results and print them , use the following script:
+To fuse the prediction results and print them, use the following script:
 
 ```bash
 python metric_result_GradNorm.py --result_dir path/to/
