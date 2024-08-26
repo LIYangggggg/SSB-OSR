@@ -31,19 +31,11 @@ This will generate multiple prediction results, which will be saved in the `save
 
 ## Result Fusion and CSV Testing
 
-To fuse the prediction results and export them to a CSV file, use the following script:
+To fuse the prediction results and print them , use the following script:
 
 ```bash
 python metric_result_GradNorm.py --result_dir path/to/
 ```
-
-This script will process the saved prediction results and produce a final CSV file containing the fused results. After generating the CSV file, you can further test the results by using the following script:
-
-```bash
-python metric_csv.py
-```
-
-This script will evaluate the CSV file and provide the final test results.
 
 ### Results
 
