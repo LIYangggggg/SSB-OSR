@@ -1,4 +1,4 @@
-# SSB-OSR
+# [OOD-CV Workshop SSB Challenge 2024 (Open-Set Recognition Track) ](https://www.ood-cv.org/challenge.html)- 1st Place
 
 ## Environment Setup
 
