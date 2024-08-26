@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import os
+import data
 from tqdm import tqdm
 from utils.test_osr_ood import get_osr_ood_metric_from_result
 
@@ -380,6 +381,7 @@ if __name__ == "__main__":
         help="Path to the result directory"
     )
     
+    
     args = parser.parse_args()
     result_dir = args.result_dir
     sub_dirs = sorted(os.listdir(result_dir))
@@ -397,8 +399,6 @@ if __name__ == "__main__":
     ood_image_name_path = os.path.join(result_dir, sub_dirs[0], "ood_image_name.txt")
     csv_save_path = os.path.join(result_dir, sub_dirs[0], "result.csv")
     export_csv(id_image_name_path, ood_image_name_path, id_preds_cls, id_preds_score, ood_preds_score, csv_save_path)
-
-
 
 
 

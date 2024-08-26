@@ -7,7 +7,7 @@ import train
 import utils.test_osr_ood
 from torch.optim.swa_utils import AveragedModel
 import model.get_model
-import optim
+import utils.optim as optim
 import data.dataset
 import utils.utils
 import utils.option
