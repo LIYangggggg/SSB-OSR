@@ -29,7 +29,6 @@ def export_csv(id_image_name_path, ood_image_name_path, id_preds_cls, id_preds_s
 
     easy_ood_sample_len = 50000
 
-    # image_names_ID需要映射
     img_ID_new_names = []
     for img_ID_name in id_image_names:
         name_splits = img_ID_name.split("_")
@@ -37,8 +36,6 @@ def export_csv(id_image_name_path, ood_image_name_path, id_preds_cls, id_preds_s
         img_ID_new_names.append(img_ID_new_name)
     id_image_names = np.array(img_ID_new_names)
 
-
-    # 合并所有结果
     print("==========Exporting CSV FILE==========")
     image_ood_ID_index = np.ones_like(ood_preds_score)*-1
     all_image_names = np.concatenate([id_image_names, ood_image_names[:easy_ood_sample_len], id_image_names, ood_image_names[easy_ood_sample_len:]])
@@ -50,7 +47,7 @@ def export_csv(id_image_name_path, ood_image_name_path, id_preds_cls, id_preds_s
 
 
 def get_predict_result(result_dir):
-    # 加载np保存的结果
+
     id_preds_softmax = np.load(os.path.join(result_dir, "id_preds_softmax.npy"))
     id_preds_labels = np.load(os.path.join(result_dir, "id_preds_labels.npy"))
     id_preds_score = np.load(os.path.join(result_dir, "id_preds_score.npy"))
@@ -60,12 +57,12 @@ def get_predict_result(result_dir):
 
 
 def get_all_predict_result(result_dirs):
-    # 将数据全部读取出来
+
     id_preds_softmax_list = []
     id_preds_score_list = []
     ood_preds_score_list = []
     for rdir in result_dirs:
-        # id_preds_labels只要一个就可以，因为都是一样的
+
         id_preds_softmax, id_preds_labels, id_preds_score, ood_preds_score = get_predict_result(rdir)
         id_preds_softmax_list.append(id_preds_softmax)
         id_preds_score_list.append(id_preds_score)
@@ -75,7 +72,7 @@ def get_all_predict_result(result_dirs):
 
 
 def calculate_result(id_preds_labels, id_preds_cls, id_preds_score, ood_preds_score):
-    # 进行统计
+
     result = get_osr_ood_metric_from_result(id_preds_labels, id_preds_cls, id_preds_score, ood_preds_score)     
 
     msg = "AUROC:{:.2f};  FPR:{:.2f};  OSCR:{:.2f};  ACC:{:.2f};  AUIN:{:.2f};  AUOUT:{:.2f};  DTERR:{:.2f};".format( \
@@ -88,7 +85,6 @@ def calculate_result(id_preds_labels, id_preds_cls, id_preds_score, ood_preds_sc
 def metric_single_result_GradNorm(result_dir):
     id_preds_softmax, id_preds_labels, id_preds_score, ood_preds_score = get_predict_result(result_dir)
 
-    # 对结果进行处理
     id_preds_cls = np.argmax(id_preds_softmax, axis=-1)
 
     calculate_result(id_preds_labels, id_preds_cls, id_preds_score, ood_preds_score)
@@ -96,11 +92,9 @@ def metric_single_result_GradNorm(result_dir):
 
 def metric_ave_result_GradNorm(result_dirs):
 
-    # 将数据全部读取出来
     id_preds_softmax_list, id_preds_labels, id_preds_score_list, ood_preds_score_list = get_all_predict_result(result_dirs)
 
     num_result = len(id_preds_softmax_list)
-    # 求平均值,id_cls使用softmax结果的平均值
     id_preds_softmax = np.zeros_like(id_preds_softmax_list[0])
     id_preds_score = np.zeros_like(id_preds_score_list[0])
     ood_preds_score = np.zeros_like(ood_preds_score_list[0])
@@ -113,22 +107,19 @@ def metric_ave_result_GradNorm(result_dirs):
     id_preds_score = id_preds_score/num_result
     ood_preds_score = ood_preds_score/num_result
     
-    # 对结果进行处理
     id_preds_cls = np.argmax(id_preds_softmax, axis=-1)
 
     calculate_result(id_preds_labels, id_preds_cls, id_preds_score, ood_preds_score)
 
-    # 是否输出csv文件；
     return id_preds_cls, id_preds_score, ood_preds_score
 
 
 def metric_ave_weight_tencrop_result_GradNorm(result_dirs, weight):
 
-    # 将数据全部读取出来
     id_preds_softmax_list, id_preds_labels, id_preds_score_list, ood_preds_score_list = get_all_predict_result(result_dirs)
 
     num_result = len(id_preds_softmax_list)
-    # 求平均值,id_cls使用softmax结果的平均值
+
     id_preds_softmax = np.zeros_like(id_preds_softmax_list[0])
     id_preds_score = np.zeros_like(id_preds_score_list[0])
     ood_preds_score = np.zeros_like(ood_preds_score_list[0])
@@ -145,35 +136,28 @@ def metric_ave_weight_tencrop_result_GradNorm(result_dirs, weight):
     id_preds_score = id_preds_score/num_result
     ood_preds_score = ood_preds_score/num_result
     
-    # 对结果进行处理
     id_preds_cls = np.argmax(id_preds_softmax, axis=-1)
 
     calculate_result(id_preds_labels, id_preds_cls, id_preds_score, ood_preds_score)
 
-    # 是否输出csv文件；
     return id_preds_cls, id_preds_score, ood_preds_score
 
 
 
 def metric_ave_remove_maxnum_result_GradNorm(result_dirs, idx):
 
-    # 将数据全部读取出来
     id_preds_softmax_list, id_preds_labels, id_preds_score_list, ood_preds_score_list = get_all_predict_result(result_dirs)
 
     num_result = len(id_preds_softmax_list)
-    # 求平均值,id_cls使用softmax结果的平均值
+
     id_preds_softmax = np.zeros_like(id_preds_softmax_list[0])
     id_preds_score = np.zeros_like(id_preds_score_list[0])
     ood_preds_score = np.zeros_like(ood_preds_score_list[0])
-    # for idx in range(num_result):
-    #     id_preds_softmax += id_preds_softmax_list[idx]
-    
-    # id_preds_softmax = id_preds_softmax/num_result
+
     id_preds_softmax = np.sum(np.sort(np.array(id_preds_softmax_list), axis=0)[idx:], axis=0)/(num_result-idx)
     id_preds_score = np.sum(np.sort(np.array(id_preds_score_list), axis=0)[idx:], axis=0)/(num_result-idx)
     ood_preds_score = np.sum(np.sort(np.array(ood_preds_score_list), axis=0)[idx:], axis=0)/(num_result-idx)
     
-    # 对结果进行处理
     id_preds_cls = np.argmax(id_preds_softmax, axis=-1)
 
     calculate_result(id_preds_labels, id_preds_cls, id_preds_score, ood_preds_score)
@@ -181,11 +165,9 @@ def metric_ave_remove_maxnum_result_GradNorm(result_dirs, idx):
 
 def metric_ave_sub_std_result_GradNorm(result_dirs, ratio):
 
-    # 将数据全部读取出来
     id_preds_softmax_list, id_preds_labels, id_preds_score_list, ood_preds_score_list = get_all_predict_result(result_dirs)
 
     num_result = len(id_preds_softmax_list)
-    # 求平均值和标准差
     id_preds_softmax_mean = np.mean(np.array(id_preds_softmax_list), axis=0)
     id_preds_score_mean = np.mean(np.array(id_preds_score_list), axis=0)
     ood_preds_score_mean = np.mean(np.array(ood_preds_score_list), axis=0)
@@ -199,7 +181,6 @@ def metric_ave_sub_std_result_GradNorm(result_dirs, ratio):
     id_preds_score = id_preds_score_mean - ratio*id_preds_score_std
     ood_preds_score = ood_preds_score_mean - ratio*ood_preds_score_std
     
-    # 对结果进行处理
     id_preds_cls = np.argmax(id_preds_softmax, axis=-1)
 
     calculate_result(id_preds_labels, id_preds_cls, id_preds_score, ood_preds_score)
@@ -208,13 +189,12 @@ def metric_ave_sub_std_result_GradNorm(result_dirs, ratio):
 
 def metric_multi_result_GradNorm(result_dirs):
 
-    # 将数据全部读取出来
     id_preds_softmax_list, id_preds_labels, id_preds_score_list, ood_preds_score_list = get_all_predict_result(result_dirs)
 
     # print(f"id_preds_softmax_list: {id_preds_softmax_list}")
     # print(f"id_preds_softmax_list: {id_preds_softmax_list}")
     num_result = len(id_preds_softmax_list)
-    # 求平均值,id_cls使用softmax结果的平均值
+
     id_preds_softmax = np.ones_like(id_preds_softmax_list[0])
     id_preds_score = np.ones_like(id_preds_score_list[0])
     ood_preds_score = np.ones_like(ood_preds_score_list[0])
@@ -241,7 +221,7 @@ def metric_temperature_sharpen_result_GradNorm(result_dirs, temperature):
     # print(f"id_preds_softmax_list: {id_preds_softmax_list}")
     # print(f"id_preds_softmax_list: {id_preds_softmax_list}")
     num_result = len(id_preds_softmax_list)
-    # 求平均值,id_cls使用softmax结果的平均值
+
     id_preds_softmax = np.ones_like(id_preds_softmax_list[0])
     id_preds_score = np.ones_like(id_preds_score_list[0])
     ood_preds_score = np.ones_like(ood_preds_score_list[0])
@@ -254,7 +234,6 @@ def metric_temperature_sharpen_result_GradNorm(result_dirs, temperature):
     id_preds_score = id_preds_score/num_result
     ood_preds_score = ood_preds_score/num_result
     
-    # 对结果进行处理
     id_preds_cls = np.argmax(id_preds_softmax, axis=-1)
 
     calculate_result(id_preds_labels, id_preds_cls, id_preds_score, ood_preds_score)
@@ -263,13 +242,10 @@ def metric_temperature_sharpen_result_GradNorm(result_dirs, temperature):
 
 def metric_simi_result_GradNorm(result_dirs):
 
-    # 将数据全部读取出来
     id_preds_softmax_list, id_preds_labels, id_preds_score_list, ood_preds_score_list = get_all_predict_result(result_dirs)
 
-    # print(f"id_preds_softmax_list: {id_preds_softmax_list}")
-    # print(f"id_preds_softmax_list: {id_preds_softmax_list}")
     num_result = len(id_preds_softmax_list)
-    # 求平均值,id_cls使用softmax结果的平均值
+
     id_preds_softmax = np.zeros_like(id_preds_softmax_list[0])
     id_preds_score = np.zeros_like(id_preds_score_list[0])
     ood_preds_score = np.zeros_like(ood_preds_score_list[0])
@@ -286,7 +262,6 @@ def metric_simi_result_GradNorm(result_dirs):
     id_preds_score = id_preds_score/count
     ood_preds_score = ood_preds_score/count
     
-    # 对结果进行处理
     id_preds_cls = np.argmax(id_preds_softmax, axis=-1)
 
     calculate_result(id_preds_labels, id_preds_cls, id_preds_score, ood_preds_score)
@@ -294,13 +269,12 @@ def metric_simi_result_GradNorm(result_dirs):
 
 def metric_simi_result_GradNorm_idx_src(result_dirs, idx_map):
 
-    # 将数据全部读取出来
     id_preds_softmax_list, id_preds_labels, id_preds_score_list, ood_preds_score_list = get_all_predict_result(result_dirs)
 
     # print(f"id_preds_softmax_list: {id_preds_softmax_list}")
     # print(f"id_preds_softmax_list: {id_preds_softmax_list}")
     num_result = len(id_preds_softmax_list)
-    # 求平均值,id_cls使用softmax结果的平均值
+
     id_preds_softmax = np.zeros_like(id_preds_softmax_list[0])
     id_preds_score = np.zeros_like(id_preds_score_list[0])
     ood_preds_score = np.zeros_like(ood_preds_score_list[0])
@@ -317,7 +291,6 @@ def metric_simi_result_GradNorm_idx_src(result_dirs, idx_map):
     id_preds_score = id_preds_score/count
     ood_preds_score = ood_preds_score/count
     
-    # 对结果进行处理
     id_preds_cls = np.argmax(id_preds_softmax, axis=-1)
 
     calculate_result(id_preds_labels, id_preds_cls, id_preds_score, ood_preds_score)
@@ -325,11 +298,10 @@ def metric_simi_result_GradNorm_idx_src(result_dirs, idx_map):
 
 def metric_max_GradNorm_and_ave_acc(result_dirs):
 
-    # 将数据全部读取出来
     id_preds_softmax_list, id_preds_labels, id_preds_score_list, ood_preds_score_list = get_all_predict_result(result_dirs)
 
     num_result = len(id_preds_softmax_list)
-    # 求平均值,id_cls使用softmax结果的平均值
+
     id_preds_softmax = np.zeros_like(id_preds_softmax_list[0])
     id_preds_score = np.zeros_like(id_preds_score_list[0])
     ood_preds_score = np.zeros_like(ood_preds_score_list[0])
@@ -340,7 +312,6 @@ def metric_max_GradNorm_and_ave_acc(result_dirs):
     id_preds_score = np.max(np.array(id_preds_score_list), axis=0)
     ood_preds_score = np.max(np.array(ood_preds_score_list), axis=0)
     
-    # 对结果进行处理
     id_preds_cls = np.argmax(id_preds_softmax, axis=-1)
 
     calculate_result(id_preds_labels, id_preds_cls, id_preds_score, ood_preds_score)
@@ -348,11 +319,10 @@ def metric_max_GradNorm_and_ave_acc(result_dirs):
 
 def metric_min_GradNorm_and_ave_acc(result_dirs):
 
-    # 将数据全部读取出来
     id_preds_softmax_list, id_preds_labels, id_preds_score_list, ood_preds_score_list = get_all_predict_result(result_dirs)
 
     num_result = len(id_preds_softmax_list)
-    # 求平均值,id_cls使用softmax结果的平均值
+
     id_preds_softmax = np.zeros_like(id_preds_softmax_list[0])
     id_preds_score = np.zeros_like(id_preds_score_list[0])
     ood_preds_score = np.zeros_like(ood_preds_score_list[0])
@@ -363,7 +333,6 @@ def metric_min_GradNorm_and_ave_acc(result_dirs):
     id_preds_score = np.min(np.array(id_preds_score_list), axis=0)
     ood_preds_score = np.min(np.array(ood_preds_score_list), axis=0)
     
-    # 对结果进行处理
     id_preds_cls = np.argmax(id_preds_softmax, axis=-1)
 
     calculate_result(id_preds_labels, id_preds_cls, id_preds_score, ood_preds_score)

@@ -1,4 +1,4 @@
-# [OOD-CV Workshop SSB Challenge 2024 (Open-Set Recognition Track) ](https://www.ood-cv.org/challenge.html)- 1st Place
+# [ECCV 2024 OOD-CV Workshop SSB Challenge (Open-Set Recognition Track) ](https://www.ood-cv.org/challenge.html)- 1st Place
 
 ## Environment Setup
 
@@ -16,7 +16,7 @@ To train the model, use the following script:
 bash run_deit_Inet1k.sh
 ```
 
-This script will initiate the training process using the pre-configured optimal parameters and the official  [pretrained model](https://drive.google.com/file/d/1Y4DmcHhngex6h8B6bX-1Ehl6i6dJVgO7/view?usp=drive_link) for fine-tuning. The resulting trained model will be saved in the specified directory.
+This script will initiate the training process using the pre-configured optimal parameters and the [official pretrained model](https://drive.google.com/file/d/1Y4DmcHhngex6h8B6bX-1Ehl6i6dJVgO7/view?usp=drive_link) for fine-tuning. The resulting trained model will be saved in the specified directory.
 
 
 ## Testing

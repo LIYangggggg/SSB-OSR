@@ -89,7 +89,6 @@ def test_predict_GradNorm_RP(model, test_loader, targets, num_classes=1000):
     return id_preds, gradnorm_preds, save_labels, image_names
 
 
-# 自定义的crop
 class FourSelfCrop(torch.nn.Module):
     def __init__(self, size, idx):
         super().__init__()
@@ -176,7 +175,6 @@ def get_selffourcrop_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, i
             dataloaders[k] = DataLoader(v, batch_size, pin_memory=True, drop_last=False, sampler=None, num_workers=4)
 
     return dataloaders['test_known'], dataloaders['test_unknown']
-
 
 
 def get_10sc_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, input_size, idx, pad_size=4, data_json_path="./splits/imagenet_ssb_splits.json"):
@@ -364,21 +362,6 @@ def get_random_crop_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, id
             dataloaders[k] = DataLoader(v, batch_size, pin_memory=True, drop_last=False, sampler=None, num_workers=4)
 
     return dataloaders['test_known'], dataloaders['test_unknown']
-
-
-def get_test_dataload():
-    transform = torchvision.transforms.Compose([
-                                                torchvision.transforms.Resize(256),
-                                                torchvision.transforms.TenCrop(224),
-                                                torchvision.transforms.Lambda(lambda crops: crops[idx]),
-                                                torchvision.transforms.Normalize(mean=torch.tensor(IMAGENET_DEFAULT_MEAN), std=torch.tensor(IMAGENET_DEFAULT_STD))])
-
-    debug_datasets = torchvision.datasets.ImageFolder(root="/data/Private/wushengliang/project_program/SSB_OSR_clone/debug_datasets", transform=transform)
-
-    # print(f"debug_datasets[0]: {debug_datasets[0]}")
-    debug_dataloader = DataLoader(debug_datasets, 64, pin_memory=True, drop_last=False, sampler=None, num_workers=4)
-    return debug_dataloader
-
 
 if __name__ == "__main__":
   
