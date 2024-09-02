@@ -393,10 +393,10 @@ if __name__ == "__main__":
         os.makedirs(save_dir)
 
     model_path = args.save_pth
-    net = model.get_model.get_model(1000, None, args)
+    net = model.get_model.get_model(1000, args)
     if args.optim_name == 'fmfp' or args.optim_name == 'swa':
         net = AveragedModel(net)
-    net.load_state_dict(torch.load(os.path.join(model_path, f'best_acc_net.pth')), strict=True)
+    net.load_state_dict(torch.load(model_path), strict=True)
     net = net.cuda()
     
     net.module.norm = nn.Identity() 

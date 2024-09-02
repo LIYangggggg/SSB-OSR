@@ -27,7 +27,7 @@ def get_args_parser():
                         help='Models name to use')
     parser.add_argument('--optim-name', default='fmfp', type=str, choices=['baseline', 'sam', 'swa', 'fmfp'],
                         help='Supported methods for optimization process')
-    parser.add_argument('--deit-path', default='/data4022/shayouyang/deit_3_base_384_mod.pth', type=str,
+    parser.add_argument('--deit-path', default='./deit_3_base_384_mod.pth', type=str,
                         help='Official DeiT checkpoints')
 
     
