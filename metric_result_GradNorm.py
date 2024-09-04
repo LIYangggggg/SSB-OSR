@@ -341,6 +341,7 @@ def metric_min_GradNorm_and_ave_acc(result_dirs):
 
 if __name__ == "__main__":
     import argparse
+    from thop import profile
     parser = argparse.ArgumentParser(description="List subdirectories in the specified result directory.")
 
     parser.add_argument(

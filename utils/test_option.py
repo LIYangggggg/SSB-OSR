@@ -17,7 +17,7 @@ def get_args_parser():
     parser.add_argument('--num-register', type=int, default=4, help='number of register')
     
     # ten crop resize ratio
-    parser.add_argument('--tencrop-ratio', type=float, default=0.875, help='ten crop resize ratio')
+    parser.add_argument('--crop-ratio', type=float, default=0.875, help='ten crop resize ratio')
     
     
     ## Model + optim method + data aug + loss + post-hoc
@@ -44,7 +44,7 @@ def get_args_parser():
     parser.add_argument('--distillation', default=False, action='store_true', help='whether use head distillation')
 
     # TTA test mode
-    parser.add_argument('--mode', default='1c', type=str, choices=['1c', '2f', '4c', '5cj', '10c', '10sc', 'cf', 's10', 'sf10', 'sf10_2'], help='TTA test mode')
+    parser.add_argument('--mode', default='5c', type=str, choices=['5c', '10c'], help='TTA test mode')
 
     ## dataset setting
     subparsers = parser.add_subparsers(title="dataset setting", dest="subcommand")

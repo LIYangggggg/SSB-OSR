@@ -28,27 +28,6 @@ def get_target(dataset_root, num_classes=1000):
     return target
 
 @torch.no_grad()
-def test_predict(model, test_loader):
-    model.eval()
-    save_logits = []
-    save_labels = []
-
-    # First extract all features
-    for images, labels, _, _ in tqdm(test_loader):
-        images = images.cuda()
-
-        # Get logits
-        logits = model(images)
-
-        save_logits.extend(logits.detach().cpu().numpy())
-        save_labels.extend(labels.detach().cpu().numpy())
-    
-    save_logits = np.array(save_logits)
-    save_labels = np.array(save_labels)
-    
-    return save_logits, save_labels
-
-@torch.no_grad()
 def test_predict_GradNorm_RP(model, test_loader, targets, num_classes=1000):
     """
     Get class predictions and Grad Norm Score for all instances in loader
@@ -89,29 +68,6 @@ def test_predict_GradNorm_RP(model, test_loader, targets, num_classes=1000):
     return id_preds, gradnorm_preds, save_labels, image_names
 
 
-class FourSelfCrop(torch.nn.Module):
-    def __init__(self, size, idx):
-        super().__init__()
-        self.size = size
-        self.idx = idx
-
-    def forward(self, img):
-        w, h = img.size
-        # up
-        if self.idx == 0:
-            crop_img = img.crop(((w-self.size)//2, 0, (w-self.size)//2 + self.size, self.size))
-        # down
-        elif self.idx == 1:
-            crop_img = img.crop(((w-self.size)//2, h-self.size, (w-self.size)//2 + self.size, h))
-        # left
-        elif self.idx == 2:
-            crop_img = img.crop((0, (h-self.size)//2, self.size, (h-self.size)//2 + self.size))
-        # right
-        else:
-            crop_img = img.crop((w-self.size, (h-self.size)//2, w, (h-self.size)//2 + self.size))
-
-        return crop_img
-
 
 def get_tencrop_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, input_size, idx, resize_ratio=0.875, data_json_path="./splits/imagenet_ssb_splits.json"):
     transform = torchvision.transforms.Compose([
@@ -134,220 +90,13 @@ def get_tencrop_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, input_
     return dataloaders['test_known'], dataloaders['test_unknown']
 
 
-def get_fivecrop_colorjitter_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, input_size, idx, resize_ratio=0.875, data_json_path="./splits/imagenet_ssb_splits.json"):
+def get_fivecrop_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, input_size, idx, resize_ratio=0.875, data_json_path="./splits/imagenet_ssb_splits.json"):
     transform = torchvision.transforms.Compose([
                                                 torchvision.transforms.Resize(int(input_size/resize_ratio)),
                                                 torchvision.transforms.FiveCrop(input_size),
                                                 torchvision.transforms.Lambda(lambda crops: crops[idx]),
-                                                torchvision.transforms.ColorJitter(brightness=0.5, hue=0.3),
-                                                torchvision.transforms.RandomHorizontalFlip(1.0),
-                                                torchvision.transforms.ToTensor(),
-                                                torchvision.transforms.Normalize(mean=torch.tensor(IMAGENET_DEFAULT_MEAN), std=torch.tensor(IMAGENET_DEFAULT_STD))])
-
-    datasets = data.dataset_osr_test.get_imagenet_osr_test_datasets(test_transform=transform,
-                                imagenet_1k_root=imagenet_1k_root,
-                                imagenet_21k_root=imagenet_21k_root,
-                                data_path=data_json_path)
-    
-    dataloaders = {}
-    for k, v, in datasets.items():
-        if v is not None:
-            dataloaders[k] = DataLoader(v, batch_size, pin_memory=True, drop_last=False, sampler=None, num_workers=4)
-
-    return dataloaders['test_known'], dataloaders['test_unknown']
-
-
-def get_selffourcrop_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, input_size, idx, resize_ratio=0.875, data_json_path="./splits/imagenet_ssb_splits.json"):
-    transform = torchvision.transforms.Compose([
-                                                torchvision.transforms.Resize(int(input_size/resize_ratio)),
-                                                FourSelfCrop(input_size, idx),
-                                                torchvision.transforms.ToTensor(),
-                                                torchvision.transforms.Normalize(mean=torch.tensor(IMAGENET_DEFAULT_MEAN), std=torch.tensor(IMAGENET_DEFAULT_STD))])
-
-    datasets = data.dataset_osr_test.get_imagenet_osr_test_datasets(test_transform=transform,
-                                imagenet_1k_root=imagenet_1k_root,
-                                imagenet_21k_root=imagenet_21k_root,
-                                data_path=data_json_path)
-    
-    dataloaders = {}
-    for k, v, in datasets.items():
-        if v is not None:
-            dataloaders[k] = DataLoader(v, batch_size, pin_memory=True, drop_last=False, sampler=None, num_workers=4)
-
-    return dataloaders['test_known'], dataloaders['test_unknown']
-
-
-def get_10sc_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, input_size, idx, pad_size=4, data_json_path="./splits/imagenet_ssb_splits.json"):
-    if idx < 5:
-        transform = torchvision.transforms.Compose([
-                                                    torchvision.transforms.Resize(input_size),
-                                                    torchvision.transforms.Pad(pad_size, padding_mode="reflect"),
-                                                    torchvision.transforms.RandomCrop(input_size),
-                                                    torchvision.transforms.ToTensor(),
-                                                    torchvision.transforms.Normalize(mean=torch.tensor(IMAGENET_DEFAULT_MEAN), std=torch.tensor(IMAGENET_DEFAULT_STD))])
-    else:
-        idx = idx - 5
-        transform = torchvision.transforms.Compose([
-                                                    torchvision.transforms.Resize(input_size),
-                                                    torchvision.transforms.Pad(pad_size, padding_mode="reflect"),
-                                                    torchvision.transforms.RandomCrop(input_size),
-                                                    torchvision.transforms.RandomHorizontalFlip(1.0),
-                                                    torchvision.transforms.ToTensor(),
-                                                    torchvision.transforms.Normalize(mean=torch.tensor(IMAGENET_DEFAULT_MEAN), std=torch.tensor(IMAGENET_DEFAULT_STD))])       
-    datasets = data.dataset_osr_test.get_imagenet_osr_test_datasets(test_transform=transform,
-                                imagenet_1k_root=imagenet_1k_root,
-                                imagenet_21k_root=imagenet_21k_root,
-                                data_path=data_json_path)
-    
-    dataloaders = {}
-    for k, v, in datasets.items():
-        if v is not None:
-            dataloaders[k] = DataLoader(v, batch_size, pin_memory=True, drop_last=False, sampler=None, num_workers=4)
-
-    return dataloaders['test_known'], dataloaders['test_unknown']
-
-
-def get_sf10_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, input_size, idx, step=0.05, data_json_path="./splits/imagenet_ssb_splits.json"):
-    # resize_scale = int(input_size/0.875)
-
-    if idx < 5:
-        resize_scale = int(input_size/(1.0 - step*idx))
-        transform = torchvision.transforms.Compose([
-                                                    torchvision.transforms.Resize(resize_scale),
-                                                    torchvision.transforms.CenterCrop(input_size),
-                                                    torchvision.transforms.ToTensor(),
-                                                    torchvision.transforms.Normalize(mean=torch.tensor(IMAGENET_DEFAULT_MEAN), std=torch.tensor(IMAGENET_DEFAULT_STD))])
-    else:
-        idx = idx - 5
-        resize_scale = int(input_size/(1.0 - step*idx))
-        transform = torchvision.transforms.Compose([
-                                                    torchvision.transforms.Resize(resize_scale),
-                                                    torchvision.transforms.CenterCrop(input_size),
-                                                    torchvision.transforms.RandomHorizontalFlip(1.0),
-                                                    torchvision.transforms.ToTensor(),
-                                                    torchvision.transforms.Normalize(mean=torch.tensor(IMAGENET_DEFAULT_MEAN), std=torch.tensor(IMAGENET_DEFAULT_STD))])       
-    datasets = data.dataset_osr_test.get_imagenet_osr_test_datasets(test_transform=transform,
-                                imagenet_1k_root=imagenet_1k_root,
-                                imagenet_21k_root=imagenet_21k_root,
-                                data_path=data_json_path)
-    
-    dataloaders = {}
-    for k, v, in datasets.items():
-        if v is not None:
-            dataloaders[k] = DataLoader(v, batch_size, pin_memory=True, drop_last=False, sampler=None, num_workers=4)
-
-    return dataloaders['test_known'], dataloaders['test_unknown']
-
-
-def get_sf10_2_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, input_size, idx, data_json_path="./splits/imagenet_ssb_splits.json"):
-    resize_scale = int(input_size/0.875)
-    if idx < 5:
-        transform = torchvision.transforms.Compose([
-                                                    torchvision.transforms.Resize(resize_scale),
-                                                    torchvision.transforms.Resize(int(resize_scale * (1 - idx*0.1))),
-                                                    torchvision.transforms.Resize(resize_scale),
-                                                    torchvision.transforms.CenterCrop(input_size),
-                                                    torchvision.transforms.ToTensor(),
-                                                    torchvision.transforms.Normalize(mean=torch.tensor(IMAGENET_DEFAULT_MEAN), std=torch.tensor(IMAGENET_DEFAULT_STD))])
-    else:
-        idx = idx - 5
-        transform = torchvision.transforms.Compose([
-                                                    torchvision.transforms.Resize(resize_scale),
-                                                    torchvision.transforms.Resize(int(resize_scale * (1 - idx*0.1))),
-                                                    torchvision.transforms.Resize(resize_scale),
-                                                    torchvision.transforms.CenterCrop(input_size),
-                                                    torchvision.transforms.RandomHorizontalFlip(1.0),
-                                                    torchvision.transforms.ToTensor(),
-                                                    torchvision.transforms.Normalize(mean=torch.tensor(IMAGENET_DEFAULT_MEAN), std=torch.tensor(IMAGENET_DEFAULT_STD))])       
-    datasets = data.dataset_osr_test.get_imagenet_osr_test_datasets(test_transform=transform,
-                                imagenet_1k_root=imagenet_1k_root,
-                                imagenet_21k_root=imagenet_21k_root,
-                                data_path=data_json_path)
-    
-    dataloaders = {}
-    for k, v, in datasets.items():
-        if v is not None:
-            dataloaders[k] = DataLoader(v, batch_size, pin_memory=True, drop_last=False, sampler=None, num_workers=4)
-
-    return dataloaders['test_known'], dataloaders['test_unknown']
-
-
-def get_scale_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, input_size, idx, data_json_path="./splits/imagenet_ssb_splits.json"):
-    resize_scale = int(input_size/0.875)
-    transform = torchvision.transforms.Compose([
-                                                torchvision.transforms.Resize(resize_scale),
-                                                torchvision.transforms.CenterCrop(input_size + int(idx/10*(resize_scale-input_size))),
-                                                torchvision.transforms.Resize(input_size),
-                                                torchvision.transforms.ToTensor(),
-                                                torchvision.transforms.Normalize(mean=torch.tensor(IMAGENET_DEFAULT_MEAN), std=torch.tensor(IMAGENET_DEFAULT_STD))])
-
-    datasets = data.dataset_osr_test.get_imagenet_osr_test_datasets(test_transform=transform,
-                                imagenet_1k_root=imagenet_1k_root,
-                                imagenet_21k_root=imagenet_21k_root,
-                                data_path=data_json_path)
-    
-    dataloaders = {}
-    for k, v, in datasets.items():
-        if v is not None:
-            dataloaders[k] = DataLoader(v, batch_size, pin_memory=True, drop_last=False, sampler=None, num_workers=4)
-
-    return dataloaders['test_known'], dataloaders['test_unknown']
-
-
-def get_src_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, input_size, data_json_path="./splits/imagenet_ssb_splits.json"):
-    resize_scale = int(input_size/0.875)
-    # resize_scale = int(input_size)
-    transform = torchvision.transforms.Compose([
-                                                torchvision.transforms.Resize(resize_scale),
-                                                torchvision.transforms.CenterCrop(input_size),
-                                                torchvision.transforms.ToTensor(),
-                                                torchvision.transforms.Normalize(mean=torch.tensor(IMAGENET_DEFAULT_MEAN), std=torch.tensor(IMAGENET_DEFAULT_STD))])
-
-    datasets = data.dataset_osr_test.get_imagenet_osr_test_datasets(test_transform=transform,
-                                imagenet_1k_root=imagenet_1k_root,
-                                imagenet_21k_root=imagenet_21k_root,
-                                data_path=data_json_path)
-    
-    dataloaders = {}
-    for k, v, in datasets.items():
-        if v is not None:
-            dataloaders[k] = DataLoader(v, batch_size, pin_memory=True, drop_last=False, sampler=None, num_workers=4)
-
-    return dataloaders['test_known'], dataloaders['test_unknown']
-
-
-def get_2flip_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, input_size, idx, data_json_path="./splits/imagenet_ssb_splits.json"):
-    # resize_scale = int(input_size/0.875)
-    resize_scale = int(input_size)
-    if idx == 0:
-        transform = torchvision.transforms.Compose([
-                                                    torchvision.transforms.Resize(resize_scale),
-                                                    torchvision.transforms.CenterCrop(input_size),
-                                                    torchvision.transforms.ToTensor(),
-                                                    torchvision.transforms.Normalize(mean=torch.tensor(IMAGENET_DEFAULT_MEAN), std=torch.tensor(IMAGENET_DEFAULT_STD))])
-    else:
-        transform = torchvision.transforms.Compose([
-                                                    torchvision.transforms.Resize(resize_scale),
-                                                    torchvision.transforms.CenterCrop(input_size),
-                                                    torchvision.transforms.RandomHorizontalFlip(1.0),
-                                                    torchvision.transforms.ToTensor(),
-                                                    torchvision.transforms.Normalize(mean=torch.tensor(IMAGENET_DEFAULT_MEAN), std=torch.tensor(IMAGENET_DEFAULT_STD))])       
-
-    datasets = data.dataset_osr_test.get_imagenet_osr_test_datasets(test_transform=transform,
-                                imagenet_1k_root=imagenet_1k_root,
-                                imagenet_21k_root=imagenet_21k_root,
-                                data_path=data_json_path)
-    
-    dataloaders = {}
-    for k, v, in datasets.items():
-        if v is not None:
-            dataloaders[k] = DataLoader(v, batch_size, pin_memory=True, drop_last=False, sampler=None, num_workers=4)
-
-    return dataloaders['test_known'], dataloaders['test_unknown']
-
-
-def get_random_crop_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, idx, data_json_path="./splits/imagenet_ssb_splits.json"):
-    transform = torchvision.transforms.Compose([getRandomResizedCropAndInterpolationdef(224, scale=(0.08, 1.0)),
+                                                # torchvision.transforms.ColorJitter(brightness=0.5, hue=0.3),
+                                                # torchvision.transforms.RandomHorizontalFlip(1.0),
                                                 torchvision.transforms.ToTensor(),
                                                 torchvision.transforms.Normalize(mean=torch.tensor(IMAGENET_DEFAULT_MEAN), std=torch.tensor(IMAGENET_DEFAULT_STD))])
 
@@ -364,24 +113,14 @@ def get_random_crop_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, id
     return dataloaders['test_known'], dataloaders['test_unknown']
 
 if __name__ == "__main__":
-  
+    
     args = utils.test_option.get_args_parser()
     os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
     torch.manual_seed(100)
 
     iter_num_dict = {
-        "1c" : 1,
-        "2f" : 2,
-        "4c" : 4,
-        "5cj" : 5,
         "10c" : 10,
         "5c" : 5,
-        "aa" : 20,
-        "cf" : 20,
-        "s10": 10,
-        "sf10" : 10,
-        "sf10_2" : 10,
-        "10sc" : 10
     }
 
     mode = args.mode
@@ -408,31 +147,13 @@ if __name__ == "__main__":
 
     batch_size = args.batch_size
     input_size = args.input_size
-    tencrop_resize_ratio = args.tencrop_ratio
-    print(f"tencrop_resize_ratio: {tencrop_resize_ratio}")
+    crop_resize_ratio = args.crop_ratio
+    print(f"crop_resize_ratio: {crop_resize_ratio}")
     for idx in range(iter_num):
-        if mode == "1c":
-            dataloader_id, dataloader_ood = get_src_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, input_size, data_json_path=data_json_path)
-        elif mode == "2f":
-            dataloader_id, dataloader_ood = get_2flip_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, input_size, idx, data_json_path=data_json_path)
-        elif mode == "4c":
-            dataloader_id, dataloader_ood = get_selffourcrop_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, input_size, idx, data_json_path=data_json_path)
-        elif mode == "5cj":
-            dataloader_id, dataloader_ood = get_fivecrop_colorjitter_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, input_size, idx, data_json_path=data_json_path)
+        if mode == "5c":
+            dataloader_id, dataloader_ood = get_fivecrop_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, input_size, idx, resize_ratio=crop_resize_ratio, data_json_path=data_json_path)
         elif mode == "10c":
-            dataloader_id, dataloader_ood = get_tencrop_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, input_size, idx, resize_ratio=tencrop_resize_ratio,data_json_path=data_json_path)
-        elif mode == "10sc":
-            pad_size = 4
-            dataloader_id, dataloader_ood = get_10sc_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, input_size, idx, pad_size=pad_size, data_json_path=data_json_path)
-        elif mode == "cf":
-            dataloader_id, dataloader_ood = get_random_crop_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, idx, data_json_path=data_json_path)
-        elif mode == "s10":
-            dataloader_id, dataloader_ood = get_scale_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, input_size, idx, data_json_path=data_json_path)
-        elif mode == "sf10":
-            step = 0.075
-            dataloader_id, dataloader_ood = get_sf10_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, input_size, idx, step=step, data_json_path=data_json_path)
-        elif mode == "sf10_2":
-            dataloader_id, dataloader_ood = get_sf10_2_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, input_size, idx, data_json_path=data_json_path)
+            dataloader_id, dataloader_ood = get_tencrop_dataload(imagenet_1k_root, imagenet_21k_root, batch_size, input_size, idx, resize_ratio=crop_resize_ratio, data_json_path=data_json_path)
          
         print(len(dataloader_id.dataset))
         print(len(dataloader_ood.dataset))
@@ -441,29 +162,21 @@ if __name__ == "__main__":
         if not os.path.exists(save_sub_dir):
             os.makedirs(save_sub_dir)
 
-        if preds_mode == "GradNorm_RP":
-            target = get_target(imagenet_1k_train)
-            id_preds, osr_preds_id_samples, id_labels, id_image_names = test_predict_GradNorm_RP(net, dataloader_id, target)
-            _, osr_preds_osr_samples, _, ood_image_names = test_predict_GradNorm_RP(net, dataloader_ood, target)
 
-            np.save(os.path.join(save_sub_dir, "id_preds_softmax.npy"), id_preds)
-            np.save(os.path.join(save_sub_dir, "id_preds_labels.npy"), id_labels)
-            np.save(os.path.join(save_sub_dir, "id_preds_score.npy"), osr_preds_id_samples)
-            np.save(os.path.join(save_sub_dir, "ood_preds_score.npy"), osr_preds_osr_samples)
+        target = get_target(imagenet_1k_train)
+        id_preds, osr_preds_id_samples, id_labels, id_image_names = test_predict_GradNorm_RP(net, dataloader_id, target)
+        _, osr_preds_osr_samples, _, ood_image_names = test_predict_GradNorm_RP(net, dataloader_ood, target)
 
-            id_image_names_w = [name + "\n" for name in id_image_names]
-            with open(os.path.join(save_sub_dir, "id_image_name.txt"), 'w') as fd:
-                fd.writelines(id_image_names_w)
-            ood_image_names_w = [name + "\n" for name in ood_image_names]
-            with open(os.path.join(save_sub_dir, "ood_image_name.txt"), 'w') as fd:
-                fd.writelines(ood_image_names_w)
+        np.save(os.path.join(save_sub_dir, "id_preds_softmax.npy"), id_preds)
+        np.save(os.path.join(save_sub_dir, "id_preds_labels.npy"), id_labels)
+        np.save(os.path.join(save_sub_dir, "id_preds_score.npy"), osr_preds_id_samples)
+        np.save(os.path.join(save_sub_dir, "ood_preds_score.npy"), osr_preds_osr_samples)
 
-        else:
-            id_preds_logits, id_preds_labels = test_predict(net, dataloader_id)
-            ood_preds_logits, ood_preds_labels = test_predict(net, dataloader_ood)        
+        id_image_names_w = [name + "\n" for name in id_image_names]
+        with open(os.path.join(save_sub_dir, "id_image_name.txt"), 'w') as fd:
+            fd.writelines(id_image_names_w)
+        ood_image_names_w = [name + "\n" for name in ood_image_names]
+        with open(os.path.join(save_sub_dir, "ood_image_name.txt"), 'w') as fd:
+            fd.writelines(ood_image_names_w)
 
-            np.save(os.path.join(save_sub_dir, "id_preds_logits.npy"), id_preds_logits)
-            np.save(os.path.join(save_sub_dir, "id_preds_labels.npy"), id_preds_labels)
-            np.save(os.path.join(save_sub_dir, "ood_preds_logits.npy"), ood_preds_logits)
-            np.save(os.path.join(save_sub_dir, "ood_preds_labels.npy"), ood_preds_labels)
         print(f"save predict {idx} Successful!")
