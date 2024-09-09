@@ -45,14 +45,14 @@ def test_predict_GradNorm_RP(model, test_loader, targets, num_classes=1000):
 
     # First extract all features
     for b,(images, labels, _, filenames) in enumerate(tqdm(test_loader)):
-        inputs = Variable(images.cuda(), requires_grad=False)
+        inputs = Variable(images.cuda(), requires_grad=True)
         # Get logits
         features = feat_model(inputs)
         outputs = model.module.head.forward(features)
         U = torch.norm(features, p=1, dim=1)
         out_softmax = torch.nn.functional.softmax(outputs, dim=1)
         V = torch.norm((targets - out_softmax), p=1, dim=1)
-        S = U * V / 768 / num_classes
+        S = U * V / num_classes
         
         # id_preds.extend(out_softmax.argmax(dim=-1).detach().cpu().numpy())
         id_preds.extend(out_softmax.detach().cpu().numpy())
