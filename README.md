@@ -22,7 +22,7 @@ This script will initiate the training process using the pre-configured optimal 
 
 ## Testing
 
-After training, you can evaluate the model using the following script. We provide fine-tuned model [DeiT III-Base](https://drive.google.com/file/d/1mpiZn1GP3K08L_RKjndI3WudceM53cUK/view?usp=sharing) and have set optimal default parameters for both training and testing. 
+After training, you can evaluate the model using the following script. We provide fine-tuned model [DeiT III-Base](https://drive.google.com/file/d/1wL8q9RFs7fY8OFEcvFMEjeH4hB5wdD14/view?usp=drive_link) and have set optimal default parameters for both training and testing. 
 
 ```bash
 bash run/run_eval_TTA.sh
