@@ -2,7 +2,7 @@
 
 This repository contains the code and resources for **Intellindust-AI-Lab**, which achieved the top performance in the **ECCV 2024 OOD-CV Workshop** SSB Challenge.
 
-![Rank](./docs/rank.png)
+![Rank](./docs/rank.jpg)
 
 ## Table of Contents
 
@@ -86,4 +86,12 @@ If our project is helpful for your research, please consider citing :
     pages     = {17500-17510}
 }
 ```
-and our challenge report: [SURE-OOD](./docs/SURE_OOD.pdf)
+and our challenge report:
+```
+@article{Li2024sureood,
+    author    = {Li, Yang and Sha, Youyang and Wu, Shengliang and Li, Yuting and Yu, Xuanlong and Huang, Shihua and Cun, Xiaodong and Chen,Yingyi and Chen, Dexiong and Shen, Xi},
+    title     = {SURE-OOD: Detecting OOD samples with SURE},
+    month     = {September}
+    year      = {2024},
+}
+```
