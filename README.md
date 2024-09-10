@@ -86,3 +86,4 @@ If our project is helpful for your research, please consider citing :
     pages     = {17500-17510}
 }
 ```
+and our challenge report: [SURE_OOD](./docs/SURE_OOD.pdf)
