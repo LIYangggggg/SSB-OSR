@@ -347,7 +347,7 @@ if __name__ == "__main__":
     parser.add_argument(
         '--result_dir', 
         type=str, 
-        default=r"exp/2_baseline_res384ep30_inputsize384_ReAct1.5/10c", 
+        default=r"/data8022/liyang/git/SSB-OSR/exp/best_0909/5c", 
         help="Path to the result directory"
     )
     
@@ -360,8 +360,8 @@ if __name__ == "__main__":
     sub_dir_list = []
 
     for i, sdir in enumerate(sub_dirs):
-        if i < 5:
-            sub_dir_list.append(os.path.join(result_dir, sdir))
+
+        sub_dir_list.append(os.path.join(result_dir, sdir))
        
     id_preds_cls, id_preds_score, ood_preds_score = metric_ave_result_GradNorm(sub_dir_list)
 

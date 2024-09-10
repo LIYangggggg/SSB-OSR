@@ -1,6 +1,6 @@
 ### Baseline
 ### SURE
-CUDA_VISIBLE_DEVICES=8 \
+CUDA_VISIBLE_DEVICES=9 \
 python3 test_osr_ood_TTA.py \
 --batch-size 128 \
 --mode '5c' \
