@@ -15,7 +15,7 @@ This repository contains the code and resources for **Intellindust-AI-Lab**, whi
 
 ## Overview 
 
-An overview of our approach is illustrated below. You can read the detailed report here: [SURE_OOD.pdf](./docs/SURE_OOD.pdf)
+An overview of our approach is illustrated below. You can read the detailed report here: [SURE-OOD.pdf](./docs/SURE_OOD.pdf)
 
 ![Diagram](./docs/diagram.png)
 
@@ -86,4 +86,4 @@ If our project is helpful for your research, please consider citing :
     pages     = {17500-17510}
 }
 ```
-and our challenge report: [SURE_OOD](./docs/SURE_OOD.pdf)
+and our challenge report: [SURE-OOD](./docs/SURE_OOD.pdf)
