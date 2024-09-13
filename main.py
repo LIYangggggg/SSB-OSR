@@ -61,8 +61,8 @@ def main(proc_idx, args):
     else:
         writer, logger = None, None
 
-    if len(args.gpu) > 1:
-        dist.init_process_group('nccl', rank=rank, world_size=len(args.gpu))
+    # if len(args.gpu) > 1:
+    dist.init_process_group('nccl', rank=rank, world_size=len(args.gpu))
 
     train_loader, valid_loader, _, nb_cls = data.dataset.get_loader(args.data_name, args.train_dir, args.val_dir, args.test_dir,
                                                                         args.batch_size, args.gpu)
@@ -156,7 +156,7 @@ if __name__ == "__main__":
     os.environ['MASTER_ADDR'] = 'localhost'
     os.environ['MASTER_PORT'] = find_free_port()
     if len(args.gpu) == 1:
-        main(args)
+        main(0, args)
     else:
         mp.spawn(main, nprocs=len(args.gpu), args=(args,))
 
